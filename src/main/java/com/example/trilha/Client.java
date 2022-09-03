@@ -4,6 +4,7 @@ import javafx.scene.layout.VBox;
 
 import java.io.*;
 import java.net.Socket;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,26 +33,27 @@ public class Client {
         String messageContent = message.split(":")[1];
 
         switch (type) {
-            case "TXT":
-                controller.addLabel(messageContent);
-                break;
-            case "MYCOL":
-                controller.setClientColor(messageContent);
-                break;
-            case "OPCOL":
-                controller.setOpponentColor(messageContent);
-                break;
-            case "TURN":
-                controller.changeTurn();
-                break;
-            case "MOV":
-                //"1,2"
+            case "TXT" -> controller.addLabel(messageContent);
+            case "MYCOL" -> controller.setClientColor(messageContent);
+            case "OPCOL" -> controller.setOpponentColor(messageContent);
+            case "TURN" -> controller.changeTurn();
+            case "MOV" -> {
                 int oldPiece = Integer.parseInt(messageContent.split(",")[0]);
                 int newPiece = Integer.parseInt(messageContent.split(",")[1]);
                 controller.handleMovement(oldPiece, newPiece);
-                break;
-            default:
-                break;
+            }
+            case "REM" ->{
+                controller.handlePlayerRemovingPiece(Integer.parseInt(messageContent));
+            }
+            case "MILL" ->{
+                controller.showMillNotification();
+            }
+            case "DRAW" ->{
+                controller.showDrawNotification();
+            }
+            case "POS" ->{
+                controller.handleOpponentPiecePositioning(Integer.parseInt(messageContent));
+            }
         }
     }
 
@@ -60,18 +62,8 @@ public class Client {
     }
 
     public void sendMovementMessage(int oldCircleId, int newCircleId) {
-        List list = Arrays.asList(oldCircleId, newCircleId);
-        String movement= "MOV"+list;
-        sendMovementToServer(movement);
-    }
-    public void sendMovementToServer(String movement){
-        try {
-            outputStream.writeObject(movement);
-        } catch (IOException e){
-            e.printStackTrace();
-            System.out.println("Error sending message to the client.");
-            //closeEverything(socket, inputStream, outputStream);
-        }
+        String movement= "MOV:" + oldCircleId + "," + newCircleId;
+        sendMessageToServer(movement);
     }
 
     public void sendMessageToServer (String messageToClient) {
@@ -90,6 +82,7 @@ public class Client {
                 try {
                     String messageFromClient = (String) inputStream.readObject();
                     if (messageFromClient != null) {
+                        //System.out.println(MessageFormat.format("Received message from server: {}", messageFromClient));
                         System.out.println(messageFromClient);
                         delegateActions(messageFromClient);
                     }
@@ -103,6 +96,12 @@ public class Client {
                 }
             }
         }).start();
+    }
+
+    public void removePieceFromOpponent(int pieceIndex){
+        String msg = "REM:" + pieceIndex;
+
+        sendMessageToServer(msg);
     }
 
     public void closeEverything (Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
@@ -119,5 +118,23 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendMillNotification(){
+        String msg = "MILL:true";
+
+        sendMessageToServer(msg);
+    }
+
+    public void sendDrawNotification(){
+        String msg = "DRAW:true";
+
+        sendMessageToServer(msg);
+    }
+
+    public void sendPiecePositioningMessage(int pieceIndex){
+        String msg = "POS:" + pieceIndex;
+
+        sendMessageToServer(msg);
     }
 }
