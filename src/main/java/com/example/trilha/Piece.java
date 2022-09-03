@@ -8,11 +8,20 @@ import java.util.ArrayList;
 public class Piece extends Circle {
 
     private Circle circle;
-    public ArrayList<Piece> neighbourhood;
+    private ArrayList<Piece> neighbourhood;
+
+    private ArrayList<Piece> horizontalLineNeighbourhood;
+
+    private ArrayList<Piece> verticalLineNeighbourhood;
+
+    private boolean isInAMill;
 
     public Piece(Circle circle){
         this.circle = circle;
         this.neighbourhood = new ArrayList<>();
+        this.horizontalLineNeighbourhood = new ArrayList<>();
+        this.verticalLineNeighbourhood = new ArrayList<>();
+        isInAMill = false;
     }
 
     public void drawPiece (Double numberX, Double numberY, Double radius, String color) {
@@ -36,4 +45,27 @@ public class Piece extends Circle {
         return neighbourhood;
     }
 
+    public ArrayList<Piece> getHorizontalLineNeighbourhood() {
+        return horizontalLineNeighbourhood;
+    }
+
+    public void setHorizontalLineNeighbourhood(ArrayList<Piece> horizontalLineNeighbourhood) {
+        this.horizontalLineNeighbourhood = horizontalLineNeighbourhood;
+    }
+
+    public ArrayList<Piece> getVerticalLineNeighbourhood() {
+        return verticalLineNeighbourhood;
+    }
+
+    public void setVerticalLineNeighbourhood(ArrayList<Piece> verticalLineNeighbourhood) {
+        this.verticalLineNeighbourhood = verticalLineNeighbourhood;
+    }
+
+    public boolean isInAMill() {
+        return isInAMill;
+    }
+
+    public void setInAMill(boolean inAMill) {
+        isInAMill = inAMill;
+    }
 }
