@@ -231,14 +231,6 @@ public class Controller implements Initializable {
                             }
                             else{
                                 if (selectedPiece.getFill() == Paint.valueOf("BLACK") && currentSelectedPiece != null) {
-                                    List<Circle> horizontalNeighbourhood = currentSelectedPiece.getHorizontalLineNeighbourhood().stream().map(Piece::getCircle).toList();
-                                    List<Circle> verticalNeighbourhood = currentSelectedPiece.getVerticalLineNeighbourhood().stream().map(Piece::getCircle).toList();
-                                    boolean isMovingToHorizontalNeighbour = horizontalNeighbourhood.contains(selectedPiece.getCircle());
-                                    boolean isMovingToVerticalNeighbour = verticalNeighbourhood.contains(selectedPiece.getCircle());
-                                    boolean isJumpingOpponentPieceHorizontally = horizontalNeighbourhood.stream().map(Circle::getFill).toList().contains(Paint.valueOf(opponentColor));
-                                    boolean isJumpingOpponentPieceVertically = verticalNeighbourhood.stream().map(Circle::getFill).toList().contains(Paint.valueOf(opponentColor));
-
-                                    //TODO nao basta olhar se a vizinhanca tem cor oposta, tem que ver se o vizinho intermediario tem, se nao vai bugar
                                     if (currentSelectedPiece.getNeighbourhood().stream().map(Piece::getCircle).toList().contains(selectedPiece.getCircle()) || remainingPieces == 3) {
                                         client.sendMovementMessage(movementMap.getPieces().indexOf(currentSelectedPiece), movementMap.getPieces().indexOf(selectedPiece));
                                         notificationLabel.setText("Voce moveu uma peca");
