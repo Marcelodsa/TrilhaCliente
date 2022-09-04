@@ -70,6 +70,10 @@
             <Font name="Arial Rounded MT Bold" size="23" />
          </font>
       </Label>
-      <Label fx:id="notificationLabel" layoutX="735.0" layoutY="741.0" prefHeight="17.0" prefWidth="418.0" />
+      <Label fx:id="notificationLabel" alignment="CENTER" layoutX="561.0" layoutY="722.0" prefHeight="17.0" prefWidth="692.0" text="Voce colocou uma peca" textAlignment="CENTER" textOverrun="WORD_ELLIPSIS">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
    </children>
 </AnchorPane>
