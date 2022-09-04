@@ -26,10 +26,8 @@ import javafx.scene.text.TextFlow;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
@@ -171,6 +169,16 @@ public class Controller implements Initializable {
         opponentColor= color;
     }
 
+    private void highlightPiece(Piece piece){
+        piece.getCircle().setStroke(Paint.valueOf("YELLOW"));
+        piece.getCircle().setStrokeWidth(2);
+    }
+
+    private void unhighlightPiece(Piece piece){
+        piece.getCircle().setStroke(Paint.valueOf("BLACK"));
+        piece.getCircle().setStrokeWidth(1);
+    }
+
     public void mouseClicked (Event event) {
         Circle circleSelected = ((Circle) event.getSource());
         Piece selectedPiece = Optional.of(movementMap.getPieces().stream().filter(p -> p.getCircle() == circleSelected).findFirst().get()).orElse(null);
@@ -186,6 +194,7 @@ public class Controller implements Initializable {
                                     selectedPiece.setFill(Paint.valueOf(clientColor));
                                     selectedPiece.getCircle().setFill(Paint.valueOf(clientColor));
                                     client.sendPiecePositioningMessage(movementMap.getPieces().indexOf(selectedPiece));
+                                    notificationLabel.setText("Voce colocou uma peca");
                                     piecesPlaced++;
                                     remainingPieces++;
                                     if (piecesPlaced == 9) {
@@ -215,24 +224,32 @@ public class Controller implements Initializable {
                         public void run() {
                             if (selectedPiece.getFill() == Paint.valueOf(clientColor)) {
                                 if(currentSelectedPiece != null){
-                                    currentSelectedPiece.setStroke(Paint.valueOf("BLACK"));
-                                    currentSelectedPiece.setStrokeWidth(0);
+                                    unhighlightPiece(currentSelectedPiece);
                                 }
                                 currentSelectedPiece = selectedPiece;
-                                currentSelectedPiece.setStroke(Paint.valueOf("WHITE"));
-                                currentSelectedPiece.setStrokeWidth(2);
+                                highlightPiece(currentSelectedPiece);
                             }
                             else{
                                 if (selectedPiece.getFill() == Paint.valueOf("BLACK") && currentSelectedPiece != null) {
-                                    if(currentSelectedPiece.getNeighbourhood().stream().map(Piece::getCircle).toList().contains(selectedPiece.getCircle()) || remainingPieces == 3){
+                                    List<Circle> horizontalNeighbourhood = currentSelectedPiece.getHorizontalLineNeighbourhood().stream().map(Piece::getCircle).toList();
+                                    List<Circle> verticalNeighbourhood = currentSelectedPiece.getVerticalLineNeighbourhood().stream().map(Piece::getCircle).toList();
+                                    boolean isMovingToHorizontalNeighbour = horizontalNeighbourhood.contains(selectedPiece.getCircle());
+                                    boolean isMovingToVerticalNeighbour = verticalNeighbourhood.contains(selectedPiece.getCircle());
+                                    boolean isJumpingOpponentPieceHorizontally = horizontalNeighbourhood.stream().map(Circle::getFill).toList().contains(Paint.valueOf(opponentColor));
+                                    boolean isJumpingOpponentPieceVertically = verticalNeighbourhood.stream().map(Circle::getFill).toList().contains(Paint.valueOf(opponentColor));
+
+                                    //TODO nao basta olhar se a vizinhanca tem cor oposta, tem que ver se o vizinho intermediario tem, se nao vai bugar
+                                    if (currentSelectedPiece.getNeighbourhood().stream().map(Piece::getCircle).toList().contains(selectedPiece.getCircle()) || remainingPieces == 3) {
                                         client.sendMovementMessage(movementMap.getPieces().indexOf(currentSelectedPiece), movementMap.getPieces().indexOf(selectedPiece));
+                                        notificationLabel.setText("Voce moveu uma peca");
 
                                         currentSelectedPiece.setFill(Paint.valueOf("BLACK"));
                                         currentSelectedPiece.getCircle().setFill(Paint.valueOf("BLACK"));
+                                        unhighlightPiece(currentSelectedPiece);
                                         selectedPiece.setFill(Paint.valueOf(clientColor));
                                         selectedPiece.getCircle().setFill(Paint.valueOf(clientColor));
 
-                                        if(currentSelectedPiece.isInAMill()){
+                                        if (currentSelectedPiece.isInAMill()) {
                                             removeFromMill(currentSelectedPiece);
                                         }
 
@@ -304,7 +321,7 @@ public class Controller implements Initializable {
         checkIfShouldDrawGame();
 
         if(!newSelectedPiece.isInAMill()) {
-            changeTurn(); // so mudar se nao houve moinho
+            changeTurn();
         }
     }
 
@@ -365,18 +382,21 @@ public class Controller implements Initializable {
             Platform.runLater(() -> {notificationLabel.setText("Voce perdeu");});
             gameOver = true;
         }
-        
-        String notificationText = "Oponente removeu uma peca sua.";
+        else {
 
-        if(remainingPieces == 3){
-            notificationText += " Modo de movimentacao livre ativado!";
+            String notificationText = "Oponente removeu uma peca sua.";
+
+            if (remainingPieces == 3) {
+                notificationText += " Modo de movimentacao livre ativado!";
+            }
+
+            String finalNotificationText = notificationText;
+            Platform.runLater(() -> {
+                notificationLabel.setText(finalNotificationText);
+            });
+
+            changeTurn();
         }
-
-        String finalNotificationText = notificationText;
-        Platform.runLater(() -> {notificationLabel.setText(finalNotificationText);});
-
-
-        changeTurn();
     }
 
     public void checkIfShouldDrawGame(){
@@ -398,6 +418,6 @@ public class Controller implements Initializable {
     }
 
     public void showDrawNotification(){
-        Platform.runLater(() ->{notificationLabel.setText("Empate por numero de movimentos restantes igual a 0 com ambos os jogadores com 3 pecoas");});
+        Platform.runLater(() ->{notificationLabel.setText("Empate por numero de movimentos restantes igual a 0 com ambos os jogadores com 3 pecas");});
     }
 }
