@@ -2,10 +2,9 @@ package com.example.trilha;
 
 import javafx.scene.shape.Circle;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Movements {
     private ArrayList<Piece> pieces;
@@ -102,11 +101,21 @@ public class Movements {
                 piece.setNeighbourhood(new ArrayList<>(Arrays.asList(leftNeighbour, rightNeighbour)));
             }
             else{
-                piece.setNeighbourhood(new ArrayList<>(Arrays.asList(firstHorizontalLineNeighbour, secondHorizontalLineNeighbour, firstVerticalLineNeighbour, secondVerticalLineNeighbour)));
+                //TODO 0 - 0 - 0 o vizinho esquerdo do meio tem index = 0, dai vai dar erro de divisao por 0, ajeitar isso
+                List<Piece> nl = Stream.of(piece.getHorizontalLineNeighbourhood().stream().filter(p -> Math.abs(customDiv(8, circles.indexOf(p.getCircle())) - 8 / circleIndex) <= 1).toList(),
+                        piece.getVerticalLineNeighbourhood().stream().filter(p -> Math.abs(customDiv(8, circles.indexOf(p.getCircle())) - 8 / circleIndex) <= 1).toList()).flatMap(Collection::stream).toList();
+                piece.setNeighbourhood(new ArrayList<>(nl));
             }
 
             pieces.add(piece);
         }
+    }
+
+    private int customDiv(int a, int b){
+        if(b == 0){
+            return 0;
+        }
+        return a / b;
     }
 
     public ArrayList<Piece> getPieces(){
