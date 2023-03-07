@@ -37,20 +37,6 @@ public class Client {
             case "MYCOL" -> controller.setClientColor(messageContent);
             case "OPCOL" -> controller.setOpponentColor(messageContent);
             case "TURN" -> controller.changeTurn();
-            case "MOV" -> {
-                int oldPiece = Integer.parseInt(messageContent.split(",")[0]);
-                int newPiece = Integer.parseInt(messageContent.split(",")[1]);
-                controller.handleMovement(oldPiece, newPiece);
-            }
-            case "REM" ->{
-                controller.handlePlayerRemovingPiece(Integer.parseInt(messageContent));
-            }
-            case "MILL" ->{
-                controller.showMillNotification();
-            }
-            case "DRAW" ->{
-                controller.showDrawNotification();
-            }
             case "POS" ->{
                 controller.handleOpponentPiecePositioning(Integer.parseInt(messageContent));
             }
@@ -98,12 +84,6 @@ public class Client {
         }).start();
     }
 
-    public void removePieceFromOpponent(int pieceIndex){
-        String msg = "REM:" + pieceIndex;
-
-        sendMessageToServer(msg);
-    }
-
     public void closeEverything (Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
         try {
             if (bufferedReader != null) {
@@ -118,18 +98,6 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void sendMillNotification(){
-        String msg = "MILL:true";
-
-        sendMessageToServer(msg);
-    }
-
-    public void sendDrawNotification(){
-        String msg = "DRAW:true";
-
-        sendMessageToServer(msg);
     }
 
     public void sendPiecePositioningMessage(int pieceIndex){

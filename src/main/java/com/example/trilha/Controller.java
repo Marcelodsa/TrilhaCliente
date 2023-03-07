@@ -43,7 +43,8 @@ public class Controller implements Initializable {
     @FXML
     private Circle place1,place2,place3,place4,place5,place6,place7,place8,place9,place10,
             place11,place12,place13,place14,place15,place16,place17,place18,place19,place20,
-            place21,place22,place23,place24,myColor;
+            place21,place22,place23,place24,place25,place26,place27,place28,place29,place30,
+            place31,place32,place33,place34,place35,place36,myColor;
     @FXML
     private Pane pane;
 
@@ -88,7 +89,8 @@ public class Controller implements Initializable {
             client = new Client(new Socket("localhost", 3456), this);
             movementMap = new Movements(Arrays.asList(place1,place2,place3,place4,place5,place6,place7,place8,place9,
                     place10,place11,place12,place13,place14,place15,place16,place17,place18,place19,place20,
-                    place21,place22,place23,place24));
+                    place21,place22,place23,place24,place25,place26,place27,place28,place29,place30,
+                    place31,place32,place33,place34,place35,place36));
             isMyTurn = false;
             createdMill = false;
             gameOver = false;
@@ -197,77 +199,18 @@ public class Controller implements Initializable {
                                     notificationLabel.setText("Voce colocou uma peca");
                                     piecesPlaced++;
                                     remainingPieces++;
-                                    if (piecesPlaced == 9) {
+                                    if (piecesPlaced == 8) {
                                         allPiecesPlaced = true;
-                                    }
-                                    if (createdMill(selectedPiece)) {
-                                        client.sendMillNotification();
-                                        System.out.println("Player created a mill");
-                                        notificationLabel.setText("Voce criou um moinho");
-                                        createdMill = true;
+                                        Platform.runLater(() ->{notificationLabel.setText("Você venceu o jogo!");});
                                     } else {
                                         changeTurn();
                                     }
                                 }
                             }
-                            else{
-                                if(selectedPiece.getFill() == Paint.valueOf(opponentColor)){
-                                    handleMillDecision(selectedPiece);
-                                }
-                            }
                         }
                     });
                 }
-                else{
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (selectedPiece.getFill() == Paint.valueOf(clientColor)) {
-                                if(currentSelectedPiece != null){
-                                    unhighlightPiece(currentSelectedPiece);
-                                }
-                                currentSelectedPiece = selectedPiece;
-                                highlightPiece(currentSelectedPiece);
-                            }
-                            else{
-                                if (selectedPiece.getFill() == Paint.valueOf("BLACK") && currentSelectedPiece != null) {
-                                    if (currentSelectedPiece.getNeighbourhood().stream().map(Piece::getCircle).toList().contains(selectedPiece.getCircle()) || remainingPieces == 3) {
-                                        client.sendMovementMessage(movementMap.getPieces().indexOf(currentSelectedPiece), movementMap.getPieces().indexOf(selectedPiece));
-                                        notificationLabel.setText("Voce moveu uma peca");
 
-                                        currentSelectedPiece.setFill(Paint.valueOf("BLACK"));
-                                        currentSelectedPiece.getCircle().setFill(Paint.valueOf("BLACK"));
-                                        unhighlightPiece(currentSelectedPiece);
-                                        selectedPiece.setFill(Paint.valueOf(clientColor));
-                                        selectedPiece.getCircle().setFill(Paint.valueOf(clientColor));
-
-                                        if (currentSelectedPiece.isInAMill()) {
-                                            removeFromMill(currentSelectedPiece);
-                                        }
-
-                                        if (createdMill(selectedPiece)) {
-                                            client.sendMillNotification();
-                                            System.out.println("Player created a mill");
-                                            notificationLabel.setText("Voce criou um moinho");
-                                            createdMill = true;
-                                        } else {
-                                            changeTurn();
-                                        }
-
-                                        currentSelectedPiece = null;
-
-                                        checkIfShouldDrawGame();
-                                    }
-                                }
-                                else{
-                                    if(createdMill) {
-                                        handleMillDecision(selectedPiece);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
             }
         }
     }
@@ -285,131 +228,21 @@ public class Controller implements Initializable {
     }
 
     public void handleOpponentPiecePositioning(int pieceIndex){
-        if(opponentPiecesPlaced < 9){
+        opponentPiecesPlaced++;
+        opponentPieces++;
+
+        Piece piecePlaced = movementMap.getPieces().get(pieceIndex);
+
+        piecePlaced.getCircle().setFill(Paint.valueOf(opponentColor));
+        piecePlaced.setFill(Paint.valueOf(opponentColor));
+
+        if(opponentPiecesPlaced < 8){
             Platform.runLater(() -> {notificationLabel.setText("Oponente colocou uma peca");});
-            opponentPiecesPlaced++;
-            opponentPieces++;
-
-            Piece piecePlaced = movementMap.getPieces().get(pieceIndex);
-
-            piecePlaced.getCircle().setFill(Paint.valueOf(opponentColor));
-            piecePlaced.setFill(Paint.valueOf(opponentColor));
-
             changeTurn();
-        }
-    }
-
-    public void handleMovement(int oldCircleId, int newCircleId){
-        Piece oldSelectedPiece = movementMap.getPieces().get(oldCircleId);
-        Piece newSelectedPiece = movementMap.getPieces().get(newCircleId);
-
-        oldSelectedPiece.getCircle().setFill(Paint.valueOf("BLACK"));
-        oldSelectedPiece.setFill(Paint.valueOf("BLACK"));
-        newSelectedPiece.getCircle().setFill(Paint.valueOf(opponentColor));
-        newSelectedPiece.setFill(Paint.valueOf(opponentColor));
-
-        Platform.runLater(() -> {notificationLabel.setText("Oponente moveu uma peca");});
-
-        checkIfShouldDrawGame();
-
-        if(!newSelectedPiece.isInAMill()) {
-            changeTurn();
-        }
-    }
-
-    /*
-    detects whether a player has created a called 'mill'
-    with 3 pieces in a horizontal or vertical line
-     */
-    private boolean createdMill(Piece piece){
-        // the 2 cells of the horizontal line neighbourhood are filled with player's pieces
-        boolean hasHorizontalMill =  piece.getHorizontalLineNeighbourhood().stream().filter(p -> p.getCircle().getFill().equals(Paint.valueOf(clientColor))).toList().size() == 2;
-
-        // the 2 cells of the vertical line neighbourhood are filled with player's pieces
-        boolean hasVerticalMill = piece.getVerticalLineNeighbourhood().stream().filter(p -> p.getCircle().getFill().equals(Paint.valueOf(clientColor))).toList().size() == 2;
-
-        return hasHorizontalMill || hasVerticalMill;
-    }
-
-    private void removeFromMill(Piece piece){
-        boolean hasHorizontalMill =  piece.getHorizontalLineNeighbourhood().stream().filter(p -> p.getCircle().getFill().equals(Paint.valueOf(clientColor))).toList().size() == 2;
-        if(hasHorizontalMill){
-            for(Piece p : piece.getHorizontalLineNeighbourhood()){
-                p.setInAMill(false);
-            }
-        }
-        else{
-            for(Piece p : piece.getVerticalLineNeighbourhood()){
-                p.setInAMill(false);
-            }
-        }
-        piece.setInAMill(false);
-    }
-
-    private void handleMillDecision(Piece selectedPiece){
-        if (!selectedPiece.isInAMill()) {
-            client.removePieceFromOpponent(movementMap.getPieces().indexOf(selectedPiece));
-            selectedPiece.setFill(Paint.valueOf("BLACK"));
-            selectedPiece.getCircle().setFill(Paint.valueOf("BLACK"));
-            opponentPieces--;
-            createdMill = false;
-            changeTurn();
-            if (opponentPiecesPlaced == 9 && opponentPieces == 2) {
-                notificationLabel.setText("Voce venceu");
-                gameOver = true;
-            }
-        }
-    }
-
-    public void handlePlayerRemovingPiece(int pieceIndex){
-        Piece removedPiece = movementMap.getPieces().get(pieceIndex);
-        removedPiece.setFill(Paint.valueOf("BLACK"));
-        removedPiece.getCircle().setFill(Paint.valueOf("BLACK"));
-
-        if(removedPiece.isInAMill()){
-            removeFromMill(removedPiece);
-        }
-        remainingPieces--;
-        if(allPiecesPlaced && remainingPieces == 2){
-            Platform.runLater(() -> {notificationLabel.setText("Voce perdeu");});
-            gameOver = true;
-        }
-        else {
-
-            String notificationText = "Oponente removeu uma peca sua.";
-
-            if (remainingPieces == 3) {
-                notificationText += " Modo de movimentacao livre ativado!";
-            }
-
-            String finalNotificationText = notificationText;
+        } else {
             Platform.runLater(() -> {
-                notificationLabel.setText(finalNotificationText);
+                notificationLabel.setText("O seu oponente venceu o jogo!");
             });
-
-            changeTurn();
         }
-    }
-
-    public void checkIfShouldDrawGame(){
-        if(piecesPlaced == 3 && opponentPieces == 3){
-            movementsToDrawGame--;
-            if(movementsToDrawGame == 0){
-                showDrawNotification();
-                client.sendDrawNotification();
-                gameOver = true;
-            }
-        }
-    }
-
-    public void showMillNotification(){
-        Platform.runLater(() -> {notificationLabel.setText("Jogador criou um moinho e removera uma peca sua");});
-        if(isMyTurn){
-            changeTurn();
-        }
-    }
-
-    public void showDrawNotification(){
-        Platform.runLater(() ->{notificationLabel.setText("Empate por numero de movimentos restantes igual a 0 com ambos os jogadores com 3 pecas");});
     }
 }
